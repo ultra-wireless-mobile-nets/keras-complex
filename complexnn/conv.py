@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# flake8: noqa
+# pylint: disable=all
 
 #
 # Authors: Chiheb Trabelsi
@@ -21,97 +23,95 @@ from .init import ComplexInit, ComplexIndependentFilters
 from .norm import LayerNormalization, ComplexLayerNorm
 
 
-
 def sanitizedInitGet(init):
-	if   init in ["sqrt_init"]:
-		return sqrt_init
-	elif init in ["complex", "complex_independent",
-	              "glorot_complex", "he_complex"]:
-		return init
-	else:
-		return initializers.get(init)
-def sanitizedInitSer(init):
-	if init in [sqrt_init]:
-		return "sqrt_init"
-	elif init == "complex" or isinstance(init, ComplexInit):
-		return "complex"
-	elif init == "complex_independent" or isinstance(init, ComplexIndependentFilters):
-		return "complex_independent"
-	else:
-		return initializers.serialize(init)
+    """sanitizedInitGet"""
+    if init in ["sqrt_init"]:
+        return sqrt_init
+    elif init in ["complex", "complex_independent", "glorot_complex",
+                  "he_complex"]:
+        return init
+    else:
+        return initializers.get(init)
 
+def sanitizedInitSer(init):
+    """sanitizedInitSer"""
+    if init in [sqrt_init]:
+        return "sqrt_init"
+    elif init == "complex" or isinstance(init, ComplexInit):
+        return "complex"
+    elif init == "complex_independent" or isinstance(init, ComplexIndependentFilters):
+        return "complex_independent"
+    else:
+        return initializers.serialize(init)
 
 
 class ComplexConv(Layer):
     """Abstract nD complex convolution layer.
-    This layer creates a complex convolution kernel that is convolved
-    with the layer input to produce a tensor of outputs.
-    If `use_bias` is True, a bias vector is created and added to the outputs.
-    Finally, if `activation` is not `None`,
-    it is applied to the outputs as well.
-    # Arguments
-        rank: An integer, the rank of the convolution,
-            e.g. "2" for 2D convolution.
-        filters: Integer, the dimensionality of the output space, i.e,
-            the number of complex feature maps. It is also the effective number
-            of feature maps for each of the real and imaginary parts.
-            (i.e. the number of complex filters in the convolution)
-            The total effective number of filters is 2 x filters.
+
+    This layer creates a complex convolution kernel that is convolved with the
+    layer input to produce a tensor of outputs. If `use_bias` is True, a bias
+    vector is created and added to the outputs. Finally, if `activation` is not
+    `None`, it is applied to the outputs as well.
+
+    Arguments:
+        rank: Integer, the rank of the convolution, e.g., "2" for 2D
+            convolution.
+        filters: Integer, the dimensionality of the output space, i.e., the
+            number of complex feature maps. It is also the effective number of
+            feature maps for each of the real and imaginary parts. (I.e., the
+            number of complex filters in the convolution) The total effective
+            number of filters is 2 x filters.
         kernel_size: An integer or tuple/list of n integers, specifying the
             dimensions of the convolution window.
-        strides: An integer or tuple/list of n integers,
-            spfying the strides of the convolution.
-            Specifying any stride value != 1 is incompatible with specifying
-            any `dilation_rate` value != 1.
+        strides: An integer or tuple/list of n integers, specifying the strides
+            of the convolution. Specifying any stride value != 1 is
+            incompatible with specifying any `dilation_rate` value != 1.
         padding: One of `"valid"` or `"same"` (case-insensitive).
-        data_format: A string,
-            one of `channels_last` (default) or `channels_first`.
-            The ordering of the dimensions in the inputs.
+        data_format: A string, one of `channels_last` (default) or
+            `channels_first`. The ordering of the dimensions in the inputs.
             `channels_last` corresponds to inputs with shape
             `(batch, ..., channels)` while `channels_first` corresponds to
-            inputs with shape `(batch, channels, ...)`.
-            It defaults to the `image_data_format` value found in your
-            Keras config file at `~/.keras/keras.json`.
-            If you never set it, then it will be "channels_last".
+            inputs with shape `(batch, channels, ...)`. It defaults to the
+            `image_data_format` value found in your Keras config file at
+            `~/.keras/keras.json`. If you never set it, then it will be
+            "channels_last".
         dilation_rate: An integer or tuple/list of n integers, specifying
-            the dilation rate to use for dilated convolution.
-            Currently, specifying any `dilation_rate` value != 1 is
-            incompatible with specifying any `strides` value != 1.
-        activation: Activation function to use
-            (see keras.activations).
-            If you don't specify anything, no activation is applied
-            (ie. "linear" activation: `a(x) = x`).
+            the dilation rate to use for dilated convolution. Currently,
+            specifying any `dilation_rate` value != 1 is incompatible with
+            specifying any `strides` value != 1.
+        activation: Activation function to use (see keras.activations). If you
+            don't specify anything, no activation is applied (i.e., "linear"
+            activation: `a(x) = x`).
         use_bias: Boolean, whether the layer uses a bias vector.
         normalize_weight: Boolean, whether the layer normalizes its complex
-            weights before convolving the complex input.
-            The complex normalization performed is similar to the one
-            for the batchnorm. Each of the complex kernels are centred and multiplied by
-            the inverse square root of covariance matrix.
-            Then, a complex multiplication is perfromed as the normalized weights are
+            weights before convolving the complex input. The complex
+            normalization performed is similar to the one for the batchnorm.
+            Each of the complex kernels is centred and multiplied by the
+            inverse square root of the covariance matrix. Then a complex
+            multiplication is performed as the normalized weights are
             multiplied by the complex scaling factor gamma.
-        kernel_initializer: Initializer for the complex `kernel` weights matrix.
-            By default it is 'complex'. The 'complex_independent' 
-            and the usual initializers could also be used.
-            (see keras.initializers and init.py).
+        kernel_initializer: Initializer for the complex `kernel` weights
+            matrix. By default it is 'complex'. The 'complex_independent'
+            and the usual initializers could also be used. (See
+            keras.initializers and init.py).
         bias_initializer: Initializer for the bias vector
             (see keras.initializers).
-        kernel_regularizer: Regularizer function applied to
-            the `kernel` weights matrix
-            (see keras.regularizers).
+        kernel_regularizer: Regularizer function applied to the `kernel`
+            weights matrix (see keras.regularizers).
         bias_regularizer: Regularizer function applied to the bias vector
             (see keras.regularizers).
-        activity_regularizer: Regularizer function applied to
-            the output of the layer (its "activation").
-            (see keras.regularizers).
+        activity_regularizer: Regularizer function applied to the output of the
+            layer (its "activation"). (See keras.regularizers).
         kernel_constraint: Constraint function applied to the kernel matrix
             (see keras.constraints).
         bias_constraint: Constraint function applied to the bias vector
             (see keras.constraints).
-        spectral_parametrization: Whether or not to use a spectral
+        spectral_parametrization: Boolean, whether or not to use a spectral
             parametrization of the parameters.
     """
 
-    def __init__(self, rank,
+    def __init__(self,
+                 rank,
                  filters,
                  kernel_size,
                  strides=1,
@@ -142,11 +142,13 @@ class ComplexConv(Layer):
         super(ComplexConv, self).__init__(**kwargs)
         self.rank = rank
         self.filters = filters
-        self.kernel_size = conv_utils.normalize_tuple(kernel_size, rank, 'kernel_size')
+        self.kernel_size = conv_utils.normalize_tuple(kernel_size, rank,
+                                                      'kernel_size')
         self.strides = conv_utils.normalize_tuple(strides, rank, 'strides')
         self.padding = conv_utils.normalize_padding(padding)
         self.data_format = 'channels_last' if rank == 1 else conv_utils.normalize_data_format(data_format)
-        self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, rank, 'dilation_rate')
+        self.dilation_rate = conv_utils.normalize_tuple(dilation_rate, rank,
+                                                        'dilation_rate')
         self.activation = activations.get(activation)
         self.use_bias = use_bias
         self.normalize_weight = normalize_weight
@@ -173,7 +175,7 @@ class ComplexConv(Layer):
         self.input_spec = InputSpec(ndim=self.rank + 2)
 
     def build(self, input_shape):
-
+        """build"""
         if self.data_format == 'channels_first':
             channel_axis = 1
         else:
@@ -182,12 +184,12 @@ class ComplexConv(Layer):
             raise ValueError('The channel dimension of the inputs '
                              'should be defined. Found `None`.')
         input_dim = input_shape[channel_axis] // 2
-        self.kernel_shape = self.kernel_size + (input_dim , self.filters)
+        self.kernel_shape = self.kernel_size + (input_dim, self.filters)
         # The kernel shape here is a complex kernel shape:
         #   nb of complex feature maps = input_dim;
         #   nb of output complex feature maps = self.filters;
-        #   imaginary kernel size = real kernel size 
-        #                         = self.kernel_size 
+        #   imaginary kernel size = real kernel size
+        #                         = self.kernel_size
         #                         = complex kernel size
         if self.kernel_initializer in {'complex', 'complex_independent'}:
             kls = {'complex':             ComplexInit,
@@ -201,7 +203,7 @@ class ComplexConv(Layer):
             )
         else:
             kern_init = self.kernel_initializer
-        
+
         self.kernel = self.add_weight(
             self.kernel_shape,
             initializer=kern_init,
@@ -277,7 +279,8 @@ class ComplexConv(Layer):
                     2: K.conv2d,
                     3: K.conv3d}[self.rank]
 
-        # processing if the weights are assumed to be represented in the spectral domain
+        # processing if the weights are assumed to be represented in the
+        # spectral domain
 
         if self.spectral_parametrization:
             if   self.rank == 1:
@@ -305,7 +308,8 @@ class ComplexConv(Layer):
                 f_real = K.permute_dimensions(f_real, (2,3,1,0))
                 f_imag = K.permute_dimensions(f_imag, (2,3,1,0))
 
-        # In case of weight normalization, real and imaginary weights are normalized
+        # In case of weight normalization, real and imaginary weights are
+        # normalized
 
         if self.normalize_weight:
             ker_shape = self.kernel_shape
@@ -328,7 +332,7 @@ class ComplexConv(Layer):
             Vii = K.mean(reshaped_f_imag_centred ** 2, axis=reduction_axes) + self.epsilon
             Vri = K.mean(reshaped_f_real_centred * reshaped_f_imag_centred,
                          axis=reduction_axes) + self.epsilon
-            
+
             normalized_weight = complex_normalization(
                 K.concatenate([reshaped_f_real, reshaped_f_imag], axis=-1),
                 Vrr, Vii, Vri,
@@ -476,8 +480,8 @@ class ComplexConv1D(ComplexConv):
             Then, a complex multiplication is perfromed as the normalized weights are
             multiplied by the complex scaling factor gamma.
         kernel_initializer: Initializer for the complex `kernel` weights matrix.
-			By default it is 'complex'. The 'complex_independent' 
-			and the usual initializers could also be used.
+            By default it is 'complex'. The 'complex_independent'
+            and the usual initializers could also be used.
             (see keras.initializers and init.py).
         bias_initializer: Initializer for the bias vector
             (see keras.initializers).
@@ -551,7 +555,7 @@ class ComplexConv1D(ComplexConv):
 class ComplexConv2D(ComplexConv):
     """2D Complex convolution layer (e.g. spatial convolution over images).
     This layer creates a complex convolution kernel that is convolved
-    with a complex input layer to produce a complex output tensor. If `use_bias` 
+    with a complex input layer to produce a complex output tensor. If `use_bias`
     is True, a complex bias vector is created and added to the outputs.
     Finally, if `activation` is not `None`, it is applied to both the
     real and imaginary parts of the output.
@@ -604,8 +608,8 @@ class ComplexConv2D(ComplexConv):
             Then, a complex multiplication is perfromed as the normalized weights are
             multiplied by the complex scaling factor gamma.
         kernel_initializer: Initializer for the complex `kernel` weights matrix.
-			By default it is 'complex'. The 'complex_independent' 
-			and the usual initializers could also be used.
+            By default it is 'complex'. The 'complex_independent'
+            and the usual initializers could also be used.
             (see keras.initializers and init.py).
         bias_initializer: Initializer for the bias vector
             (see keras.initializers).
@@ -740,8 +744,8 @@ class ComplexConv3D(ComplexConv):
             Then, a complex multiplication is perfromed as the normalized weights are
             multiplied by the complex scaling factor gamma.
         kernel_initializer: Initializer for the complex `kernel` weights matrix.
-			By default it is 'complex'. The 'complex_independent' 
-			and the usual initializers could also be used.
+            By default it is 'complex'. The 'complex_independent'
+            and the usual initializers could also be used.
             (see keras.initializers and init.py).
         bias_initializer: Initializer for the bias vector
             (see keras.initializers).
@@ -819,12 +823,12 @@ class ComplexConv3D(ComplexConv):
 
 
 class WeightNorm_Conv(_Conv):
-	# Real-valued Convolutional Layer that normalizes its weights
-	# before convolving the input.
-	# The weight Normalization performed the one
-	# described in the following paper:
-	# Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks
-	# (see https://arxiv.org/abs/1602.07868)
+    # Real-valued Convolutional Layer that normalizes its weights
+    # before convolving the input.
+    # The weight Normalization performed the one
+    # described in the following paper:
+    # Weight Normalization: A Simple Reparameterization to Accelerate Training of Deep Neural Networks
+    # (see https://arxiv.org/abs/1602.07868)
 
     def __init__(self,
                  gamma_initializer='ones',
@@ -877,7 +881,7 @@ class WeightNorm_Conv(_Conv):
         normalized_weight = K.reshape(self.gamma, (1, ker_shape[-2] * ker_shape[-1])) * normalized_weight
         shaped_kernel = K.reshape(normalized_weight, ker_shape)
         shaped_kernel._keras_shape = ker_shape
-        
+
         convArgs = {"strides":       self.strides[0]       if self.rank == 1 else self.strides,
                     "padding":       self.padding,
                     "data_format":   self.data_format,
