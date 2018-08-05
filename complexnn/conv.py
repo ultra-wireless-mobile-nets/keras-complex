@@ -23,6 +23,22 @@ from .init import ComplexInit, ComplexIndependentFilters
 from .norm import LayerNormalization, ComplexLayerNorm
 
 
+def conv_transpose_output_length(input_length, filter_size, padding, stride,
+                                 dilation=1):
+    """Rearrange arguments for compatibility with conv_output_length."""
+    if dilation != 1:
+        msg = f"Dilation must be 1 for transposed convolution. "
+        msg + f"Got dilation = {dilation}"
+        raise ValueError(msg)
+    return conv_utils.deconv_length(
+        input_length,  # dim_size
+        stride,  # stride_size
+        filter_size,  # kernel_size
+        padding,  # padding
+        None  # output_padding
+    )
+
+
 def sanitizedInitGet(init):
     """sanitizedInitGet"""
     if init in ["sqrt_init"]:
@@ -32,6 +48,7 @@ def sanitizedInitGet(init):
         return init
     else:
         return initializers.get(init)
+
 
 def sanitizedInitSer(init):
     """sanitizedInitSer"""
@@ -108,6 +125,7 @@ class ComplexConv(Layer):
             (see keras.constraints).
         spectral_parametrization: Boolean, whether or not to use a spectral
             parametrization of the parameters.
+        transposed: Boolean, whether or not to use transposed convolution
     """
 
     def __init__(self,
@@ -137,6 +155,7 @@ class ComplexConv(Layer):
                  init_criterion='he',
                  seed=None,
                  spectral_parametrization=False,
+                 transposed=False,
                  epsilon=1e-7,
                  **kwargs):
         super(ComplexConv, self).__init__(**kwargs)
@@ -154,6 +173,7 @@ class ComplexConv(Layer):
         self.normalize_weight = normalize_weight
         self.init_criterion = init_criterion
         self.spectral_parametrization = spectral_parametrization
+        self.transposed = transposed
         self.epsilon = epsilon
         self.kernel_initializer = sanitizedInitGet(kernel_initializer)
         self.bias_initializer = sanitizedInitGet(bias_initializer)
@@ -275,9 +295,14 @@ class ComplexConv(Layer):
                     "padding":       self.padding,
                     "data_format":   self.data_format,
                     "dilation_rate": self.dilation_rate[0] if self.rank == 1 else self.dilation_rate}
-        convFunc = {1: K.conv1d,
-                    2: K.conv2d,
-                    3: K.conv3d}[self.rank]
+        if self.transposed:
+            convFunc = {1: K.conv1d_transpose,
+                        2: K.conv2d_transpose,
+                        3: K.conv3d_transpose}[self.rank]
+        else:
+            convFunc = {1: K.conv1d,
+                        2: K.conv2d,
+                        3: K.conv3d}[self.rank]
 
         # processing if the weights are assumed to be represented in the
         # spectral domain
@@ -375,11 +400,15 @@ class ComplexConv(Layer):
         return output
 
     def compute_output_shape(self, input_shape):
+        if self.transposed:
+            outputLengthFunc = conv_transpose_output_length
+        else:
+            outputLengthFunc = conv_utils.conv_output_length
         if self.data_format == 'channels_last':
             space = input_shape[1:-1]
             new_space = []
             for i in range(len(space)):
-                new_dim = conv_utils.conv_output_length(
+                new_dim = outputLengthFunc(
                     space[i],
                     self.kernel_size[i],
                     padding=self.padding,
@@ -392,7 +421,7 @@ class ComplexConv(Layer):
             space = input_shape[2:]
             new_space = []
             for i in range(len(space)):
-                new_dim = conv_utils.conv_output_length(
+                new_dim = outputLengthFunc(
                     space[i],
                     self.kernel_size[i],
                     padding=self.padding,
@@ -428,6 +457,7 @@ class ComplexConv(Layer):
             'gamma_off_constraint': constraints.serialize(self.gamma_off_constraint),
             'init_criterion': self.init_criterion,
             'spectral_parametrization': self.spectral_parametrization,
+            'transposed': self.transposed,
         }
         base_config = super(ComplexConv, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
@@ -658,6 +688,7 @@ class ComplexConv2D(ComplexConv):
                  seed=None,
                  init_criterion='he',
                  spectral_parametrization=False,
+                 transposed=False,
                  **kwargs):
         super(ComplexConv2D, self).__init__(
             rank=2,
@@ -678,6 +709,7 @@ class ComplexConv2D(ComplexConv):
             bias_constraint=bias_constraint,
             init_criterion=init_criterion,
             spectral_parametrization=spectral_parametrization,
+            transposed=transposed,
             **kwargs)
 
     def get_config(self):
@@ -912,8 +944,6 @@ class WeightNorm_Conv(_Conv):
         }
         base_config = super(WeightNorm_Conv, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
-
-
 
 # Aliases
 
