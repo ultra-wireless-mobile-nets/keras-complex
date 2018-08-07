@@ -529,6 +529,7 @@ class ComplexConv1D(ComplexConv):
             (see keras.constraints).
         spectral_parametrization: Whether or not to use a spectral
             parametrization of the parameters.
+        transposed: Boolean, whether or not to use transposed convolution
     # Input shape
         3D tensor with shape: `(batch_size, steps, input_dim)`
     # Output shape
@@ -553,6 +554,7 @@ class ComplexConv1D(ComplexConv):
                  seed=None,
                  init_criterion='he',
                  spectral_parametrization=False,
+                 transposed=False,
                  **kwargs):
         super(ComplexConv1D, self).__init__(
             rank=1,
@@ -573,6 +575,7 @@ class ComplexConv1D(ComplexConv):
             bias_constraint=bias_constraint,
             init_criterion=init_criterion,
             spectral_parametrization=spectral_parametrization,
+            transposed=transposed,
             **kwargs)
 
     def get_config(self):
@@ -657,6 +660,7 @@ class ComplexConv2D(ComplexConv):
             (see keras.constraints).
         spectral_parametrization: Whether or not to use a spectral
             parametrization of the parameters.
+        transposed: Boolean, whether or not to use transposed convolution
     # Input shape
         4D tensor with shape:
         `(samples, channels, rows, cols)` if data_format='channels_first'
@@ -795,6 +799,7 @@ class ComplexConv3D(ComplexConv):
             (see keras.constraints).
         spectral_parametrization: Whether or not to use a spectral
             parametrization of the parameters.
+        transposed: Boolean, whether or not to use transposed convolution
     # Input shape
         5D tensor with shape:
         `(samples, channels, conv_dim1, conv_dim2, conv_dim3)` if data_format='channels_first'
@@ -826,6 +831,7 @@ class ComplexConv3D(ComplexConv):
                  seed=None,
                  init_criterion='he',
                  spectral_parametrization=False,
+                 transposed=False,
                  **kwargs):
         super(ComplexConv3D, self).__init__(
             rank=3,
@@ -846,6 +852,7 @@ class ComplexConv3D(ComplexConv):
             bias_constraint=bias_constraint,
             init_criterion=init_criterion,
             spectral_parametrization=spectral_parametrization,
+            transposed=transposed,
             **kwargs)
 
     def get_config(self):
