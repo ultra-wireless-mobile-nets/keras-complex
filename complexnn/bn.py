@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
+# pylint: disable=C0301,C0111
+# flake8: noqa
 
 #
 # Authors: Chiheb Trabelsi, Olexa Bilaniuk
@@ -25,6 +27,8 @@ def sanitizedInitGet(init):
         return sqrt_init
     else:
         return initializers.get(init)
+
+
 def sanitizedInitSer(init):
     if init in [sqrt_init]:
         return "sqrt_init"
@@ -32,10 +36,9 @@ def sanitizedInitSer(init):
         return initializers.serialize(init)
 
 
-
 def complex_standardization(input_centred, Vrr, Vii, Vri,
                             layernorm=False, axis=-1):
-    
+
     ndim = K.ndim(input_centred)
     input_dim = K.shape(input_centred)[axis] // 2
     variances_broadcast = [1] * ndim
@@ -43,17 +46,18 @@ def complex_standardization(input_centred, Vrr, Vii, Vri,
     if layernorm:
         variances_broadcast[0] = K.shape(input_centred)[0]
 
-    # We require the covariance matrix's inverse square root. That first requires
-    # square rooting, followed by inversion (I do this in that order because during
-    # the computation of square root we compute the determinant we'll need for
-    # inversion as well).
+    # We require the covariance matrix's inverse square root. That first
+    # requires square rooting, followed by inversion (I do this in that order
+    # because during the computation of square root we compute the determinant
+    # we'll need for inversion as well).
 
     # tau = Vrr + Vii = Trace. Guaranteed >= 0 because SPD
     tau = Vrr + Vii
-    # delta = (Vrr * Vii) - (Vri ** 2) = Determinant. Guaranteed >= 0 because SPD
+    # delta = (Vrr * Vii) - (Vri ** 2) = Determinant. Guaranteed >= 0 because
+    # SPD
     delta = (Vrr * Vii) - (Vri ** 2)
 
-    s = np.sqrt(delta) # Determinant of square root matrix
+    s = np.sqrt(delta)  # Determinant of square root matrix
     t = np.sqrt(tau + 2 * s)
 
     # The square root matrix could now be explicitly formed as
@@ -106,8 +110,9 @@ def complex_standardization(input_centred, Vrr, Vii, Vri,
         centred_imag = input_centred[:, :, :, :, input_dim:]
     else:
         raise ValueError(
-            'Incorrect Batchnorm combination of axis and dimensions. axis should be either 1 or -1. '
-            'axis: ' + str(self.axis) + '; ndim: ' + str(ndim) + '.'
+            'Incorrect Batchnorm combination of axis and dimensions. axis '
+            'should be either 1 or -1. '
+            'axis: ' + str(axis) + '; ndim: ' + str(ndim) + '.'
         )
     rolled_input = K.concatenate([centred_imag, centred_real], axis=axis)
 
@@ -122,8 +127,8 @@ def complex_standardization(input_centred, Vrr, Vii, Vri,
 
 
 def ComplexBN(input_centred, Vrr, Vii, Vri, beta,
-               gamma_rr, gamma_ri, gamma_ii, scale=True,
-               center=True, layernorm=False, axis=-1):
+              gamma_rr, gamma_ri, gamma_ii, scale=True,
+              center=True, layernorm=False, axis=-1):
 
     ndim = K.ndim(input_centred)
     input_dim = K.shape(input_centred)[axis] // 2
@@ -148,9 +153,11 @@ def ComplexBN(input_centred, Vrr, Vii, Vri, beta,
         # and the shifting parameter
         #    Beta = [beta_real beta_imag].T
         # where:
-        # x_real_BN = gamma_rr * x_real_normed + gamma_ri * x_imag_normed + beta_real
-        # x_imag_BN = gamma_ri * x_real_normed + gamma_ii * x_imag_normed + beta_imag
-        
+        # x_real_BN = gamma_rr * x_real_normed +
+        #             gamma_ri * x_imag_normed + beta_real
+        # x_imag_BN = gamma_ri * x_real_normed +
+        #             gamma_ii * x_imag_normed + beta_imag
+
         broadcast_gamma_rr = K.reshape(gamma_rr, gamma_broadcast_shape)
         broadcast_gamma_ri = K.reshape(gamma_ri, gamma_broadcast_shape)
         broadcast_gamma_ii = K.reshape(gamma_ii, gamma_broadcast_shape)
@@ -171,8 +178,9 @@ def ComplexBN(input_centred, Vrr, Vii, Vri, beta,
             centred_imag = standardized_output[:, :, :, :, input_dim:]
         else:
             raise ValueError(
-                'Incorrect Batchnorm combination of axis and dimensions. axis should be either 1 or -1. '
-                'axis: ' + str(self.axis) + '; ndim: ' + str(ndim) + '.'
+                'Incorrect Batchnorm combination of axis and dimensions. axis'
+                ' should be either 1 or -1. '
+                'axis: ' + str(axis) + '; ndim: ' + str(ndim) + '.'
             )
         rolled_standardized_output = K.concatenate([centred_imag, centred_real], axis=axis)
         if center:
@@ -189,12 +197,12 @@ def ComplexBN(input_centred, Vrr, Vii, Vri, beta,
 
 
 class ComplexBatchNormalization(Layer):
-    """Complex version of the real domain 
+    """Complex version of the real domain
     Batch normalization layer (Ioffe and Szegedy, 2014).
     Normalize the activations of the previous complex layer at each batch,
     i.e. applies a transformation that maintains the mean of a complex unit
     close to the null vector, the 2 by 2 covariance matrix of a complex unit close to identity
-    and the 2 by 2 relation matrix, also called pseudo-covariance, close to the 
+    and the 2 by 2 relation matrix, also called pseudo-covariance, close to the
     null matrix.
     # Arguments
         axis: Integer, the axis that should be normalized
@@ -456,4 +464,3 @@ class ComplexBatchNormalization(Layer):
         }
         base_config = super(ComplexBatchNormalization, self).get_config()
         return dict(list(base_config.items()) + list(config.items()))
-
