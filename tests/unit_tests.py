@@ -19,40 +19,56 @@ class TestDNCMethods(unittest.TestCase):
     def test_outputs_forward(self):
         """test_outputs_forward"""
         layer = conn.ComplexConv2D(
+            filters=4,
+            kernel_size=3,
+            strides=2,
+            padding="same",
+            transposed=False)
+        input_shape = (None, 128, 128, 2)
+        true = (None, 64, 64, 8)
+        calc = layer.compute_output_shape(input_shape)
+        assert true == calc
+
+    def test_outputs_transpose(self):
+        """test_outputs_transpose"""
+        layer = conn.ComplexConv2D(
             filters=2,
             kernel_size=3,
             strides=2,
-            padding="same")
-        outputs_shape = layer.compute_output_shape((None, 128, 128, 0))
-        print(f'outputs shape: {outputs_shape}')
+            padding="same",
+            transposed=True)
+        input_shape = (None, 64, 64, 4)
+        true = (None, 128, 128, 4)
+        calc = layer.compute_output_shape(input_shape)
+        assert true == calc
 
     def test_conv2Dforward(self):
         """test_conv2Dforward"""
         inputs = Input(shape=(128, 128, 2))
         outputs = conn.ComplexConv2D(
-            1, 3, 1, padding="same",
-            activation="relu", transposed=False)(inputs)
-        model = Model(inputs=inputs, outputs=outputs)
-        model.summary()
-
-    # def test_conv2Dtranspose(self):
-    #     """test_conv2Dtranspose"""
-
-        # Transposed convolution
-        layer = conn.ComplexConv2D(
-            filters=2,
+            filters=4,
             kernel_size=3,
-            strides=(2, 2),
+            strides=2,
             padding="same",
-            transposed=True)
-        outputs_shape = layer.compute_output_shape((None, 64, 64, 4))
-        print(f'outputs shape: {outputs_shape}')
-    #     inputs = Input(shape=(5, 5, 0))
-    #     outputs = conn.ComplexConv2D(
-    #         1, 3, 1, padding="same",
-    #         activation="relu", transposed=True)(inputs)
-    #     model = Model(inputs=inputs, outputs=outputs)
-    #     model.summary()
+            transposed=False)(inputs)
+        model = Model(inputs=inputs, outputs=outputs)
+        true = (None, 64, 64, 8)
+        calc = model.output_shape
+        assert true == calc
+
+    def test_conv2Dtranspose(self):
+        """test_conv2Dtranspose"""
+        inputs = Input(shape=(64, 64, 20))  # = 10 CDN filters
+        outputs = conn.ComplexConv2D(
+            filters=2,  # = 4 Keras filters
+            kernel_size=3,
+            strides=2,
+            padding="same",
+            transposed=True)(inputs)
+        model = Model(inputs=inputs, outputs=outputs)
+        true = (None, 128, 128, 4)
+        calc = model.output_shape
+        assert true == calc
 
     # def test_later():
         # tf.reset_default_graph()

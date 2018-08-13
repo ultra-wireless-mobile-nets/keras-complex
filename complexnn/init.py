@@ -16,7 +16,7 @@ from keras.utils.generic_utils import (serialize_keras_object,
 class IndependentFilters(Initializer):
     # This initialization constructs real-valued kernels
     # that are independent as much as possible from each other
-    # while respecting either the He or the Glorot criterion. 
+    # while respecting either the He or the Glorot criterion.
     def __init__(self, kernel_size, input_dim,
                  weight_dim, nb_filters=None,
                  criterion='glorot', seed=None):
@@ -228,12 +228,15 @@ class ComplexInit(Initializer):
     def __call__(self, shape, dtype=None):
 
         if self.nb_filters is not None:
-            kernel_shape = tuple(self.kernel_size) + (int(self.input_dim), self.nb_filters)
+            kernel_shape = shape
+            # kernel_shape = tuple(self.kernel_size) + (int(self.input_dim),
+            #                      self.nb_filters)
         else:
             kernel_shape = (int(self.input_dim), self.kernel_size[-1])
 
         fan_in, fan_out = initializers._compute_fans(
-            tuple(self.kernel_size) + (self.input_dim, self.nb_filters)
+            # tuple(self.kernel_size) + (self.input_dim, self.nb_filters)
+            kernel_shape
         )
 
         if self.criterion == 'glorot':

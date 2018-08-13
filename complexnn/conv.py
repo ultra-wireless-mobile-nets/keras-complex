@@ -9,30 +9,57 @@
 from keras import backend as K
 from keras import activations, initializers, regularizers, constraints
 from keras.layers import (
-    # Lambda,
     Layer,
     InputSpec,
-    # Convolution1D,
-    # Convolution2D,
-    # add,
-    # multiply,
-    # Activation,
-    # Input,
-    # concatenate,
 )
 from keras.layers.convolutional import _Conv
-# from keras.layers.merge import _Merge
-# from keras.layers.recurrent import Recurrent
 from keras.utils import conv_utils
-# from keras.models import Model
 import numpy as np
-# from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
 
-# from .fft import fft, ifft, fft2, ifft2
 from .bn import ComplexBN as complex_normalization
 from .bn import sqrt_init
 from .init import ComplexInit, ComplexIndependentFilters
-# from .norm import LayerNormalization, ComplexLayerNorm
+
+
+def conv2d_transpose(
+        inputs,
+        filter,  # pylint: disable=redefined-builtin
+        kernel_size=None,
+        filters=None,
+        strides=(1, 1),
+        padding="SAME",
+        data_format="channels_last"):
+    """Compatibility layer for K.conv2d_transpose
+
+    Take a filter defined for forward convolution and adjusts it for a
+    transposed convolution."""
+    input_shape = K.shape(inputs)
+    batch_size = input_shape[0]
+    if data_format == 'channels_first':
+        h_axis, w_axis = 2, 3
+    else:
+        h_axis, w_axis = 1, 2
+
+    height, width = input_shape[h_axis], input_shape[w_axis]
+    kernel_h, kernel_w = kernel_size
+    stride_h, stride_w = strides
+
+    # Infer the dynamic output shape:
+    out_height = conv_utils.deconv_length(height,
+                                          stride_h, kernel_h,
+                                          padding)
+    out_width = conv_utils.deconv_length(width,
+                                         stride_w, kernel_w,
+                                         padding)
+    if data_format == 'channels_first':
+        output_shape = (batch_size, filters, out_height, out_width)
+    else:
+        output_shape = (batch_size, out_height, out_width, filters)
+
+    filter = K.permute_dimensions(filter, (0, 1, 3, 2))
+    return K.conv2d_transpose(inputs, filter, output_shape, strides,
+                              padding=padding,
+                              data_format=data_format)
 
 
 def ifft(f):
@@ -46,8 +73,7 @@ def ifft2(f):
 
 
 def conv_transpose_output_length(
-        input_length, filter_size, padding, stride, dilation=1
-):
+        input_length, filter_size, padding, stride, dilation=1):
     """Rearrange arguments for compatibility with conv_output_length."""
     if dilation != 1:
         msg = f"Dilation must be 1 for transposed convolution. "
@@ -183,8 +209,7 @@ class ComplexConv(Layer):
             spectral_parametrization=False,
             transposed=False,
             epsilon=1e-7,
-            **kwargs,
-    ):
+            **kwargs):
         super(ComplexConv, self).__init__(**kwargs)
         self.rank = rank
         self.filters = filters
@@ -244,7 +269,10 @@ class ComplexConv(Layer):
                 "should be defined. Found `None`."
             )
         input_dim = input_shape[channel_axis] // 2
-        self.kernel_shape = self.kernel_size + (input_dim, self.filters)
+        if False and self.transposed:
+            self.kernel_shape = self.kernel_size + (self.filters, input_dim)
+        else:
+            self.kernel_shape = self.kernel_size + (input_dim, self.filters)
         # The kernel shape here is a complex kernel shape:
         #   nb of complex feature maps = input_dim;
         #   nb of output complex feature maps = self.filters;
@@ -326,15 +354,26 @@ class ComplexConv(Layer):
     def call(self, inputs, **kwargs):
         channel_axis = 1 if self.data_format == "channels_first" else -1
         input_dim = K.shape(inputs)[channel_axis] // 2
-        if self.rank == 1:
-            f_real = self.kernel[:, :, :self.filters]
-            f_imag = self.kernel[:, :, self.filters:]
-        elif self.rank == 2:
-            f_real = self.kernel[:, :, :, :self.filters]
-            f_imag = self.kernel[:, :, :, self.filters:]
-        elif self.rank == 3:
-            f_real = self.kernel[:, :, :, :, :self.filters]
-            f_imag = self.kernel[:, :, :, :, self.filters:]
+        if False and self.transposed:
+            if self.rank == 1:
+                f_real = self.kernel[:, :self.filters, :]
+                f_imag = self.kernel[:, self.filters:, :]
+            elif self.rank == 2:
+                f_real = self.kernel[:, :, :self.filters, :]
+                f_imag = self.kernel[:, :, self.filters:, :]
+            elif self.rank == 3:
+                f_real = self.kernel[:, :, :, :self.filters, :]
+                f_imag = self.kernel[:, :, :, self.filters:, :]
+        else:
+            if self.rank == 1:
+                f_real = self.kernel[:, :, :self.filters]
+                f_imag = self.kernel[:, :, self.filters:]
+            elif self.rank == 2:
+                f_real = self.kernel[:, :, :, :self.filters]
+                f_imag = self.kernel[:, :, :, self.filters:]
+            elif self.rank == 3:
+                f_real = self.kernel[:, :, :, :, :self.filters]
+                f_imag = self.kernel[:, :, :, :, self.filters:]
 
         convArgs = {
             "strides": self.strides[0] if self.rank == 1 else self.strides,
@@ -347,12 +386,10 @@ class ComplexConv(Layer):
         }
         if self.transposed:
             convArgs.pop("dilation_rate", None)
-            convArgs["output_shape"] = conv_transpose_output_length(
-                input_dim, np.min(self.kernel_size),
-                self.padding, np.min(self.strides))
+            convArgs["kernel_size"] = self.kernel_size
+            convArgs["filters"] = 2 * self.filters
             convFunc = {
-                2: K.conv2d_transpose,
-                3: K.conv3d_transpose}[self.rank]
+                2: conv2d_transpose}[self.rank]
         else:
             convFunc = {1: K.conv1d, 2: K.conv2d, 3: K.conv3d}[self.rank]
 
@@ -445,9 +482,12 @@ class ComplexConv(Layer):
         cat_kernels_4_complex = K.concatenate(
             [cat_kernels_4_real, cat_kernels_4_imag], axis=-1
         )
-        cat_kernels_4_complex._keras_shape = self.kernel_size + (
-            2 * input_dim, 2 * self.filters
-        )
+        if False and self.transposed:
+            cat_kernels_4_complex._keras_shape = \
+                self.kernel_size + (2 * self.filters, 2 * input_dim)
+        else:
+            cat_kernels_4_complex._keras_shape = \
+                self.kernel_size + 2 * input_dim, 2 * self.filters
 
         output = convFunc(inputs, cat_kernels_4_complex, **convArgs)
 
