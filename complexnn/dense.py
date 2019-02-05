@@ -11,8 +11,7 @@ from keras import backend as K
 from keras import activations, initializers, regularizers, constraints
 from keras.layers import Layer, InputSpec
 import numpy as np
-from theano.sandbox.rng_mrg import MRG_RandomStreams as RandomStreams
-
+from numpy.random import RandomState
 
 class ComplexDense(Layer):
     """Regular complex densely-connected NN layer.
@@ -110,7 +109,7 @@ class ComplexDense(Layer):
             s = K.sqrt(1. / fan_in)
         elif self.init_criterion == 'glorot':
             s = K.sqrt(1. / (fan_in + fan_out))
-        rng = RandomStreams(seed=self.seed)
+        rng = RandomState(seed=self.seed)
 
         # Equivalent initialization using amplitude phase representation:
         """modulus = rng.rayleigh(scale=s, size=kernel_shape)
