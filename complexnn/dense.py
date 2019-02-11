@@ -106,9 +106,9 @@ class ComplexDense(Layer):
             data_format=data_format
         )
         if self.init_criterion == 'he':
-            s = K.sqrt(1. / fan_in)
+            s = np.sqrt(1. / fan_in)
         elif self.init_criterion == 'glorot':
-            s = K.sqrt(1. / (fan_in + fan_out))
+            s = np.sqrt(1. / (fan_in + fan_out))
         rng = RandomState(seed=self.seed)
 
         # Equivalent initialization using amplitude phase representation:
@@ -123,17 +123,15 @@ class ComplexDense(Layer):
         def init_w_real(shape, dtype=None):
             return rng.normal(
                 size=kernel_shape,
-                avg=0,
-                std=s,
-                dtype=dtype
-            )
+                loc=0,
+                scale=s,
+            ).astype(dtype)
         def init_w_imag(shape, dtype=None):
             return rng.normal(
                 size=kernel_shape,
-                avg=0,
-                std=s,
-                dtype=dtype
-            )
+                loc=0,
+                scale=s
+            ).astype(dtype)
         if self.kernel_initializer in {'complex'}:
             real_init = init_w_real
             imag_init = init_w_imag

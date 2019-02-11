@@ -269,7 +269,7 @@ class ComplexConv(Layer):
                 "The channel dimension of the inputs "
                 "should be defined. Found `None`."
             )
-        input_dim = input_shape[channel_axis] // 2
+        input_dim = input_shape[channel_axis] // 2 # Divide by 2 for real and complex input.
         if False and self.transposed:
             self.kernel_shape = self.kernel_size + (self.filters, input_dim)
         else:
@@ -353,7 +353,10 @@ class ComplexConv(Layer):
         self.built = True
 
     def call(self, inputs, **kwargs):
-        channel_axis = 1 if self.data_format == "channels_first" else -1
+        if self.data_format == "channels_first":
+            channel_axis = 1
+        else:
+            channel_axis = -1
         input_dim = K.shape(inputs)[channel_axis] // 2
         if False and self.transposed:
             if self.rank == 1:
@@ -710,7 +713,6 @@ class ComplexConv1D(ComplexConv):
     def get_config(self):
         config = super(ComplexConv1D, self).get_config()
         config.pop("rank")
-        config.pop("data_format")
         return config
 
 
@@ -1123,3 +1125,6 @@ class WeightNorm_Conv(_Conv):
 ComplexConvolution1D = ComplexConv1D
 ComplexConvolution2D = ComplexConv2D
 ComplexConvolution3D = ComplexConv3D
+ComplexConvolution1D = CConv1D
+ComplexConvolution2D = CConv2D
+ComplexConvolution3D = CConv3D
