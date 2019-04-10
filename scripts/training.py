@@ -105,12 +105,9 @@ def getResidualBlock(I, filter_size, featmaps, stage, block, shortcut, convArgs,
 		O = ComplexConv2D(nb_fmaps2, filter_size, name=conv_name_base+'2b', **convArgs)(O)
 	
 	if   shortcut == 'regular':
-		# O = Add()([O, I])
-		# s1 = len(O)
-		# s2 = len(O[0])
-		# s3 = len(O[0][0])
-		O = Add()([O[:,:,0:22], I[:,0:22,:]])
-	elif shortcut == 'projection':
+
+		# O = Add()([O,I])
+	#elif shortcut == 'projection':
 		if d.spectral_pool_scheme == "proj":
 			I = applySpectralPooling(I, d)
 		if   d.model == "real":
