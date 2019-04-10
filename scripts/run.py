@@ -26,7 +26,7 @@ class MsgFormatter(L.Formatter):
 	
 	def formatTime(self, record, datefmt):
 		t           = record.created
-		timeFrac    = abs(t-long(t))
+		timeFrac    = abs(t-int(t))
 		timeStruct  = time.localtime(record.created)
 		timeString  = ""
 		timeString += time.strftime("%F %T", timeStruct)
