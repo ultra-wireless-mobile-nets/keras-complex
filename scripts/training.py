@@ -25,7 +25,7 @@ from   keras.regularizers                    import l2
 from   keras.utils.np_utils                  import to_categorical
 import keras.backend                         as     K
 import keras.models                          as     KM
-from   kerosene.datasets                     import svhn2
+# from   kerosene.datasets                     import svhn2
 import logging                               as     L
 import numpy                                 as     np
 import os, pdb, socket, sys, time
@@ -196,7 +196,7 @@ def getResnetModel(d):
 	# Stage 2
 	#
 	
-	for i in xrange(n):
+	for i in range(n):
 		O = getResidualBlock(O, filsize, [sf, sf], 2, str(i), 'regular', convArgs, bnArgs, d)
 		if i == n//2 and d.spectral_pool_scheme == "stagemiddle":
 			O = applySpectralPooling(O, d)
@@ -209,7 +209,7 @@ def getResnetModel(d):
 	if d.spectral_pool_scheme == "nodownsample":
 		O = applySpectralPooling(O, d)
 	
-	for i in xrange(n-1):
+	for i in range(n-1):
 		O = getResidualBlock(O, filsize, [sf*2, sf*2], 3, str(i+1), 'regular', convArgs, bnArgs, d)
 		if i == n//2 and d.spectral_pool_scheme == "stagemiddle":
 			O = applySpectralPooling(O, d)
@@ -222,7 +222,7 @@ def getResnetModel(d):
 	if d.spectral_pool_scheme == "nodownsample":
 		O = applySpectralPooling(O, d)
 	
-	for i in xrange(n-1):
+	for i in range(n-1):
 		O = getResidualBlock(O, filsize, [sf*4, sf*4], 4, str(i+1), 'regular', convArgs, bnArgs, d)
 		if i == n//2 and d.spectral_pool_scheme == "stagemiddle":
 			O = applySpectralPooling(O, d)
