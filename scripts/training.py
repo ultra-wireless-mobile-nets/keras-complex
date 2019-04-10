@@ -106,7 +106,10 @@ def getResidualBlock(I, filter_size, featmaps, stage, block, shortcut, convArgs,
 	
 	if   shortcut == 'regular':
 		# O = Add()([O, I])
-		O = Add()([O[:,0:20,:], I[:,:,0:21]])
+		# s1 = len(O)
+		# s2 = len(O[0])
+		# s3 = len(O[0][0])
+		O = Add()([O, I[0:len(O),0:len(O[0]),0:len(O[0][0])]])
 	elif shortcut == 'projection':
 		if d.spectral_pool_scheme == "proj":
 			I = applySpectralPooling(I, d)
