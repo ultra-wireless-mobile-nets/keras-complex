@@ -1125,6 +1125,6 @@ class WeightNorm_Conv(_Conv):
 ComplexConvolution1D = ComplexConv1D
 ComplexConvolution2D = ComplexConv2D
 ComplexConvolution3D = ComplexConv3D
-ComplexConvolution1D = CConv1D
-ComplexConvolution2D = CConv2D
-ComplexConvolution3D = CConv3D
+# ComplexConvolution1D = CConv1D
+# ComplexConvolution2D = CConv2D
+# ComplexConvolution3D = CConv3D
