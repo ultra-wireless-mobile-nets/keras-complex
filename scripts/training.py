@@ -15,7 +15,7 @@ from complexnn import GetImag, GetReal
 import h5py                                  as     H
 import keras
 from   keras.callbacks                       import Callback, ModelCheckpoint, LearningRateScheduler
-from   keras.datasets                        import cifar10, cifar100
+from   keras.datasets                        import cifar10, cifar100, mnist
 from   keras.initializers                    import Orthogonal
 from   keras.layers                          import Layer, AveragePooling2D, AveragePooling3D, add, Add, concatenate, Concatenate, Input, Flatten, Dense, Convolution2D, BatchNormalization, Activation, Reshape, ConvLSTM2D, Conv2D
 from   keras.models                          import Model, load_model, save_model
@@ -252,7 +252,7 @@ def getResnetModel(d):
 		O = Dense(10,  activation='softmax', kernel_regularizer=l2(0.0001))(O)
 	elif dataset == 'cifar100':
 		O = Dense(100, activation='softmax', kernel_regularizer=l2(0.0001))(O)
-	elif dataset == 'svhn':
+	elif dataset == 'mnist':
 		O = Dense(10,  activation='softmax', kernel_regularizer=l2(0.0001))(O)
 	else:
 		raise ValueError("Unknown dataset "+d.dataset)
@@ -531,8 +531,8 @@ def train(d):
 		(X_train, y_train), (X_test, y_test) = cifar100.load_data()
 		nb_classes                           = 100
 		n_train                              = 45000
-	elif d.dataset == 'svhn':
-		(X_train, y_train), (X_test, y_test) = svhn2.load_data()
+	elif d.dataset == 'mnist':
+		(X_train, y_train), (X_test, y_test) = mnist.load_data()
 		nb_classes                           = 10
 		# Make classes 0 - 9 instead of 1 - 10
 		y_train                              = y_train - 1
